@@ -1,16 +1,20 @@
-const { getConfigJson } = require("./config/config-parser");
+import { Deployer } from "@solarity/hardhat-migrate";
+import { getConfigJson } from "./config/config-parser";
+import { MasterContractsRegistry__factory } from "@/generated-types";
 
-const vault = require("node-vault")({
-  apiVersion: "v1",
-  endpoint: process.env.VAULT_ENDPOINT,
-  token: process.env.VAULT_TOKEN,
-});
+module.exports = async (deployer: Deployer) => {
+  if (process.env.VAULT_DISABLED && process.env.VAULT_DISABLED === 'true') return
+  const vault = require("node-vault")({
+    apiVersion: "v1",
+    endpoint: process.env.VAULT_ENDPOINT,
+    token: process.env.VAULT_TOKEN,
+  });
+  
+  const registry = await deployer.deployed(
+    MasterContractsRegistry__factory,
+    "MasterContractsRegistry Proxy"
+  );
 
-const Registry = artifacts.require("MasterContractsRegistry");
-const ERC1967Proxy = artifacts.require("ERC1967Proxy");
-
-module.exports = async (deployer) => {
-  const registry = await Registry.at((await ERC1967Proxy.deployed()).address);
   const masterAccessAddress = await registry.getMasterAccessManagement();
   const constantsRegistryAddress = await registry.getConstantsRegistry();
   const reviewableRequestsAddress = await registry.getReviewableRequests();
@@ -26,12 +30,11 @@ module.exports = async (deployer) => {
     projectName: projectName,
     addresses: {
       ConstantsRegistry: constantsRegistryAddress,
-      MasterContractsRegistry: registry.address,
+      MasterContractsRegistry: registry.getAddress(),
       MasterAccessManagement: masterAccessAddress,
       ReviewableRequests: reviewableRequestsAddress,
       Multicall: multicallAddress,
     },
-    startBlock: deployer.startMigrationsBlock,
   };
 
   await vault.write(process.env.VAULT_UPLOAD_CONFIG_PATH, { data: config });

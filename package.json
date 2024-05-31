@@ -16,6 +16,7 @@
     "distributedlab"
   ],
   "scripts": {
+    "install": "npx husky init",
     "compile": "npx hardhat compile --force",
     "coverage": "npx hardhat coverage --solcoverjs ./.solcover.ts",
     "test": "npx hardhat test",
@@ -33,7 +34,8 @@
     "lint-json-fix": "prettier --write \"./[a-zA-Z0-9.]+(?!-lock).json\"",
     "lint-ts-fix": "prettier --write \"./**/*.ts\"",
     "lint-sol-fix": "prettier --write \"contracts/**/*.sol\"",
-    "publish-to-npm": "npm run lint-fix && bash ./scripts/publish.sh"
+    "publish-to-npm": "npm run lint-fix && bash ./scripts/publish.sh",
+    "prepare": "husky"
   },
   "dependencies": {
     "@dlsl/dev-modules": "2.2.0",

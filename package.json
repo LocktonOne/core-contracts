@@ -37,19 +37,19 @@
   },
   "dependencies": {
     "@dlsl/dev-modules": "2.2.0",
-    "@dlsl/hardhat-markup": "^1.0.0-rc.14",
-    "@nomicfoundation/hardhat-chai-matchers": "^2.0.6",
-    "@nomicfoundation/hardhat-ethers": "^3.0.6",
     "@openzeppelin/contracts": "4.8.0",
     "@openzeppelin/contracts-upgradeable": "4.8.0"
   },
   "devDependencies": {
-    "hardhat": "2.20.0",
+    "@dlsl/hardhat-markup": "^1.0.0-rc.14",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.6",
+    "@nomicfoundation/hardhat-ethers": "^3.0.6",
+    "@solarity/hardhat-migrate": "2.1.8",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
-    "typescript": "^5.4.5",
-    "dotenv": "^16.4.5",
     "@types/mocha": "^10.0.6",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.4",
     "hardhat-contract-sizer": "^2.10.0",
     "hardhat-gas-reporter": "^2.2.0",
     "husky": "^9.0.11",
@@ -62,6 +62,6 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typechain": "^8.3.2",
-    "@solarity/hardhat-migrate": "2.1.8"
+    "typescript": "^5.4.5"
   }
 }

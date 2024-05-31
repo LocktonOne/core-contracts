@@ -29,9 +29,9 @@
     "deploy-bsc-mainnet": "npx hardhat migrate --network bsc --verify --confirmations 2",
     "generate-types": "TYPECHAIN_FORCE=true npx hardhat typechain",
     "generate-docs": "npx hardhat markup",
-    "lint-fix": "npm run lint-sol-fix && npm run lint-js-fix && npm run lint-json-fix",
+    "lint-fix": "npm run lint-sol-fix && npm run lint-ts-fix && npm run lint-json-fix",
     "lint-json-fix": "prettier --write \"./[a-zA-Z0-9.]+(?!-lock).json\"",
-    "lint-js-fix": "prettier --write \"./**/*.js\"",
+    "lint-ts-fix": "prettier --write \"./**/*.ts\"",
     "lint-sol-fix": "prettier --write \"contracts/**/*.sol\"",
     "publish-to-npm": "npm run lint-fix && bash ./scripts/publish.sh"
   },

@@ -6,11 +6,17 @@ module.exports = async (deployer: Deployer) => {
   const deployerAccount = await deployer.getSigner();
 
   const registry = await deployer.deployed(MasterContractsRegistry__factory, "MasterContractsRegistry Proxy");
-  const masterAccessImpl = await deployer.deployed(MasterAccessManagement__factory, "MasterAccessManagement Implementation")
+  const masterAccessImpl = await deployer.deployed(
+    MasterAccessManagement__factory,
+    "MasterAccessManagement Implementation",
+  );
 
-  await registry.__MasterContractsRegistry_init(masterAccessImpl)
+  await registry.__MasterContractsRegistry_init(masterAccessImpl);
 
-  const masterAccess = await deployer.deployed(MasterAccessManagement__factory, await registry.getMasterAccessManagement());
+  const masterAccess = await deployer.deployed(
+    MasterAccessManagement__factory,
+    await registry.getMasterAccessManagement(),
+  );
 
-  await masterAccess.__MasterAccessManagement_init(deployerAccount)
+  await masterAccess.__MasterAccessManagement_init(deployerAccount);
 };

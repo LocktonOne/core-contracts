@@ -3,12 +3,14 @@ import { Deployer } from "@solarity/hardhat-migrate";
 
 import { getConfigJson } from "./config/config-parser";
 
-
-module.exports = async (deployer : Deployer) => {
+module.exports = async (deployer: Deployer) => {
   const registry = await deployer.deployed(MasterContractsRegistry__factory, "MasterContractsRegistry Proxy");
 
-  const masterAccess = await deployer.deployed(MasterAccessManagement__factory, await registry.getMasterAccessManagement());
-  
+  const masterAccess = await deployer.deployed(
+    MasterAccessManagement__factory,
+    await registry.getMasterAccessManagement(),
+  );
+
   const rolesConfig = getConfigJson().roles;
 
   if (rolesConfig == undefined) {
@@ -32,7 +34,6 @@ module.exports = async (deployer : Deployer) => {
     allowPermissions = allowPermissions == undefined ? [] : allowPermissions;
     disallowPermissions = disallowPermissions == undefined ? [] : disallowPermissions;
 
-    await masterAccess.addCombinedPermissionsToRole(role, description, allowPermissions, disallowPermissions)
-   
+    await masterAccess.addCombinedPermissionsToRole(role, description, allowPermissions, disallowPermissions);
   }
 };

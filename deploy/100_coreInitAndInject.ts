@@ -4,12 +4,11 @@ import { Deployer } from "@solarity/hardhat-migrate";
 
 module.exports = async (deployer: Deployer) => {
   const registry = await deployer.deployed(MasterContractsRegistry__factory, "MasterContractsRegistry Proxy");
-  
-  const multicall = await deployer.deployed(Multicall__factory, await registry.getMulticall());
-  await multicall.__Multicall_init()
 
-  await registry.injectDependencies(await registry.CONSTANTS_REGISTRY_NAME())   
-  await registry.injectDependencies(await registry.REVIEWABLE_REQUESTS_NAME())
-  await registry.injectDependencies(await registry.MULTICALL_NAME())
-   
+  const multicall = await deployer.deployed(Multicall__factory, await registry.getMulticall());
+  await multicall.__Multicall_init();
+
+  await registry.injectDependencies(await registry.CONSTANTS_REGISTRY_NAME());
+  await registry.injectDependencies(await registry.REVIEWABLE_REQUESTS_NAME());
+  await registry.injectDependencies(await registry.MULTICALL_NAME());
 };

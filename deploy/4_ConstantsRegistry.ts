@@ -7,5 +7,5 @@ module.exports = async (deployer: Deployer) => {
 
   const constantsRegistry = await deployer.deploy(ConstantsRegistry__factory);
 
-  await registry.addProxyContract(await registry.CONSTANTS_REGISTRY_NAME(), (constantsRegistry as any).address)
+  await registry.addProxyContract(await registry.CONSTANTS_REGISTRY_NAME(), (constantsRegistry as any).address);
 };

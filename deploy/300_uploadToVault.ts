@@ -3,17 +3,14 @@ import { getConfigJson } from "./config/config-parser";
 import { MasterContractsRegistry__factory } from "@/generated-types";
 
 module.exports = async (deployer: Deployer) => {
-  if (process.env.VAULT_DISABLED && process.env.VAULT_DISABLED === 'true') return
+  if (process.env.VAULT_DISABLED && process.env.VAULT_DISABLED === "true") return;
   const vault = require("node-vault")({
     apiVersion: "v1",
     endpoint: process.env.VAULT_ENDPOINT,
     token: process.env.VAULT_TOKEN,
   });
-  
-  const registry = await deployer.deployed(
-    MasterContractsRegistry__factory,
-    "MasterContractsRegistry Proxy"
-  );
+
+  const registry = await deployer.deployed(MasterContractsRegistry__factory, "MasterContractsRegistry Proxy");
 
   const masterAccessAddress = await registry.getMasterAccessManagement();
   const constantsRegistryAddress = await registry.getConstantsRegistry();

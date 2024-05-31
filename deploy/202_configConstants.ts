@@ -1,6 +1,5 @@
 import {
   ConstantsRegistry__factory,
-  MasterAccessManagement__factory,
   MasterContractsRegistry__factory,
 } from "@/generated-types";
 import { Deployer } from "@solarity/hardhat-migrate";
@@ -8,14 +7,8 @@ import { Deployer } from "@solarity/hardhat-migrate";
 import { getConfigJson } from "./config/config-parser";
 
 module.exports = async (deployer: Deployer) => {
-  const registry = await deployer.deployed(
-    MasterContractsRegistry__factory,
-    "MasterContractsRegistry Proxy"
-  );
-  const constantsRegistry = await deployer.deployed(
-    ConstantsRegistry__factory,
-    await registry.getConstantsRegistry()
-  );
+  const registry = await deployer.deployed(MasterContractsRegistry__factory, "MasterContractsRegistry Proxy");
+  const constantsRegistry = await deployer.deployed(ConstantsRegistry__factory, await registry.getConstantsRegistry());
 
   const constantsConfig = getConfigJson().constants;
 
@@ -55,9 +48,7 @@ module.exports = async (deployer: Deployer) => {
         await constantsRegistry.addBytes32(constant, constantValue);
         break;
       default:
-        throw new Error(
-          `Constant ${constant} has invalid type ${constantType}`
-        );
+        throw new Error(`Constant ${constant} has invalid type ${constantType}`);
     }
   }
 };

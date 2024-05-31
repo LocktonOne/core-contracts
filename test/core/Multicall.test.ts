@@ -94,14 +94,10 @@ describe("Multicall", () => {
 
   before("setup", async () => {
     [OWNER, USER_WITH_ROLE, USER_WITHOUT_ROLE] = await ethers.getSigners();
-    const MasterContractsRegistry = await ethers.getContractFactory(
-      "MasterContractsRegistry"
-    );
+    const MasterContractsRegistry = await ethers.getContractFactory("MasterContractsRegistry");
     registry = await MasterContractsRegistry.deploy();
 
-    const MasterAccessManagementFactory = await ethers.getContractFactory(
-      "MasterAccessManagement"
-    );
+    const MasterAccessManagementFactory = await ethers.getContractFactory("MasterAccessManagement");
     masterAccess = await MasterAccessManagementFactory.deploy();
     const Multicall = await ethers.getContractFactory("MulticallMock");
     multicall = await Multicall.deploy();
@@ -109,23 +105,18 @@ describe("Multicall", () => {
     await registry.__MasterContractsRegistry_init(masterAccess);
 
     masterAccess = MasterAccessManagementFactory.attach(
-      await registry.getMasterAccessManagement()
+      await registry.getMasterAccessManagement(),
     ) as MasterAccessManagement;
     await masterAccess.__MasterAccessManagement_init(OWNER);
 
     await registry.addProxyContract(await registry.MULTICALL_NAME(), multicall);
 
-    multicall = Multicall.attach(
-      await registry.getMulticall()
-    ) as MulticallMock;
+    multicall = Multicall.attach(await registry.getMulticall()) as MulticallMock;
     await multicall.__Multicall_init();
 
     await registry.injectDependencies(await registry.MULTICALL_NAME());
     const MulticalleeMock = await ethers.getContractFactory("MulticalleeMock");
-    multicallee = await MulticalleeMock.deploy(
-      await multicall.getAddress(),
-      await masterAccess.getAddress()
-    );
+    multicallee = await MulticalleeMock.deploy(await multicall.getAddress(), await masterAccess.getAddress());
 
     await masterAccess.addPermissionsToRole(
       MULTICALLEE_CALLER_ROLE,
@@ -135,18 +126,12 @@ describe("Multicall", () => {
           permissions: [await multicallee.CALL_PERMISSION()],
         },
       ],
-      true
+      true,
     );
-    await masterAccess.grantRoles(await multicall.getAddress(), [
-      await masterAccess.MASTER_ROLE(),
-    ]);
+    await masterAccess.grantRoles(await multicall.getAddress(), [await masterAccess.MASTER_ROLE()]);
     await masterAccess.grantRoles(USER_WITH_ROLE, [MULTICALLEE_CALLER_ROLE]);
-    const MulticallExecutor = await ethers.getContractFactory(
-      "MulticallExecutor"
-    );
-    executor = MulticallExecutor.attach(
-      await multicall.getMulticallExecutor()
-    ) as MulticallExecutor;
+    const MulticallExecutor = await ethers.getContractFactory("MulticallExecutor");
+    executor = MulticallExecutor.attach(await multicall.getMulticallExecutor()) as MulticallExecutor;
 
     await reverter.snapshot();
   });
@@ -155,19 +140,13 @@ describe("Multicall", () => {
 
   describe("#__Multicall_init", () => {
     it("should revert when reinitialized", async () => {
-      await expect(
-        multicall.__Multicall_init(),
-        "Initializable: contract is already initialized"
-      );
+      await expect(multicall.__Multicall_init(), "Initializable: contract is already initialized");
     });
   });
 
   describe("#setDependencies", () => {
     it("should not set dependencies from non dependant", async () => {
-      await expect(
-        multicall.setDependencies(OWNER, "0x"),
-        "Dependant: not an injector"
-      );
+      await expect(multicall.setDependencies(OWNER, "0x"), "Dependant: not an injector");
     });
   });
 
@@ -176,21 +155,13 @@ describe("Multicall", () => {
       await expect(
         multicall
           .connect(USER_WITHOUT_ROLE)
-          .multicall(
-            [multicallee],
-            [ENCODED_FUNCTIONS_TO_CALL.addArgumentWithRole(11)]
-          )
+          .multicall([multicallee], [ENCODED_FUNCTIONS_TO_CALL.addArgumentWithRole(11)]),
       ).to.be.rejectedWith("MulticalleeMock: access denied");
     });
 
     it("should revert if the executor caller is not the facade", async () => {
       await expect(
-        executor
-          .connect(USER_WITH_ROLE)
-          .multicall(
-            [multicallee],
-            [ENCODED_FUNCTIONS_TO_CALL.addArgumentWithRole(11)]
-          )
+        executor.connect(USER_WITH_ROLE).multicall([multicallee], [ENCODED_FUNCTIONS_TO_CALL.addArgumentWithRole(11)]),
       ).to.be.rejectedWith("MulticallExecutor: caller is not the facade");
     });
 
@@ -200,28 +171,20 @@ describe("Multicall", () => {
           .connect(USER_WITH_ROLE)
           .multicall(
             [multicallee],
-            [
-              ENCODED_FUNCTIONS_TO_CALL.addOneWithoutRole(),
-              ENCODED_FUNCTIONS_TO_CALL.addArgumentWithRole(11),
-            ]
-          )
+            [ENCODED_FUNCTIONS_TO_CALL.addOneWithoutRole(), ENCODED_FUNCTIONS_TO_CALL.addArgumentWithRole(11)],
+          ),
       ).to.be.rejectedWith("Multicall: lengths mismatch");
 
       await expect(
         multicall
           .connect(USER_WITH_ROLE)
-          .multicall(
-            [multicallee, multicallee],
-            [ENCODED_FUNCTIONS_TO_CALL.addOneWithoutRole()]
-          )
+          .multicall([multicallee, multicallee], [ENCODED_FUNCTIONS_TO_CALL.addOneWithoutRole()]),
       ).to.be.rejectedWith("Multicall: lengths mismatch");
     });
 
     it("should revert if reentrancy", async () => {
       await expect(
-        multicall
-          .connect(USER_WITH_ROLE)
-          .multicall([multicallee], [ENCODED_FUNCTIONS_TO_CALL.attack()])
+        multicall.connect(USER_WITH_ROLE).multicall([multicallee], [ENCODED_FUNCTIONS_TO_CALL.attack()]),
       ).to.be.rejectedWith("ReentrancyGuard: reentrant call");
     });
 
@@ -230,10 +193,7 @@ describe("Multicall", () => {
         .connect(USER_WITH_ROLE)
         .multicall(
           [multicallee, multicallee],
-          [
-            ENCODED_FUNCTIONS_TO_CALL.addOneWithoutRole(),
-            ENCODED_FUNCTIONS_TO_CALL.addArgumentWithRole(11),
-          ]
+          [ENCODED_FUNCTIONS_TO_CALL.addOneWithoutRole(), ENCODED_FUNCTIONS_TO_CALL.addArgumentWithRole(11)],
         );
 
       expect(await multicallee.counter()).to.be.equal("12");
@@ -241,10 +201,7 @@ describe("Multicall", () => {
 
       await multicall
         .connect(USER_WITHOUT_ROLE)
-        .multicall(
-          [multicallee],
-          [ENCODED_FUNCTIONS_TO_CALL.addOneWithoutRole()]
-        );
+        .multicall([multicallee], [ENCODED_FUNCTIONS_TO_CALL.addOneWithoutRole()]);
 
       expect(await multicallee.counter()).to.be.equal("13");
       expect(await masterAccess.getUserRoles(executor)).to.be.deep.equal([]);
@@ -257,14 +214,9 @@ describe("Multicall", () => {
         multicall
           .connect(USER_WITH_ROLE)
           .connect(USER_WITHOUT_ROLE)
-          .multicallWithValues(
-            [multicallee],
-            [ENCODED_FUNCTIONS_TO_CALL.addMsgValueWithRole()],
-            [300],
-            {
-              value: 300,
-            }
-          )
+          .multicallWithValues([multicallee], [ENCODED_FUNCTIONS_TO_CALL.addMsgValueWithRole()], [300], {
+            value: 300,
+          }),
       ).to.be.rejectedWith("MulticalleeMock: access denied");
     });
 
@@ -272,14 +224,9 @@ describe("Multicall", () => {
       await expect(
         executor
           .connect(USER_WITH_ROLE)
-          .multicallWithValues(
-            [multicallee],
-            [ENCODED_FUNCTIONS_TO_CALL.addMsgValueWithRole()],
-            [300],
-            {
-              value: 300,
-            }
-          )
+          .multicallWithValues([multicallee], [ENCODED_FUNCTIONS_TO_CALL.addMsgValueWithRole()], [300], {
+            value: 300,
+          }),
       ).to.be.rejectedWith("MulticallExecutor: caller is not the facade");
     });
 
@@ -289,12 +236,15 @@ describe("Multicall", () => {
           .connect(USER_WITH_ROLE)
           .multicallWithValues(
             [multicallee],
-            [
-              ENCODED_FUNCTIONS_TO_CALL.addMsgValueWithRole(),
-              ENCODED_FUNCTIONS_TO_CALL.addOneWithoutRole(),
-            ],
-            [0, 0]
-          )
+            [ENCODED_FUNCTIONS_TO_CALL.addMsgValueWithRole(), ENCODED_FUNCTIONS_TO_CALL.addOneWithoutRole()],
+            [0, 0],
+          ),
+      ).to.be.rejectedWith("Multicall: lengths mismatch");
+
+      await expect(
+        multicall
+          .connect(USER_WITH_ROLE)
+          .multicallWithValues([multicallee, multicallee], [ENCODED_FUNCTIONS_TO_CALL.addMsgValueWithRole()], [0, 0]),
       ).to.be.rejectedWith("Multicall: lengths mismatch");
 
       await expect(
@@ -302,22 +252,9 @@ describe("Multicall", () => {
           .connect(USER_WITH_ROLE)
           .multicallWithValues(
             [multicallee, multicallee],
-            [ENCODED_FUNCTIONS_TO_CALL.addMsgValueWithRole()],
-            [0, 0]
-          )
-      ).to.be.rejectedWith("Multicall: lengths mismatch");
-
-      await expect(
-        multicall
-          .connect(USER_WITH_ROLE)
-          .multicallWithValues(
-            [multicallee, multicallee],
-            [
-              ENCODED_FUNCTIONS_TO_CALL.addMsgValueWithRole(),
-              ENCODED_FUNCTIONS_TO_CALL.addOneWithoutRole(),
-            ],
-            [0]
-          )
+            [ENCODED_FUNCTIONS_TO_CALL.addMsgValueWithRole(), ENCODED_FUNCTIONS_TO_CALL.addOneWithoutRole()],
+            [0],
+          ),
       ).to.be.rejectedWith("Multicall: lengths mismatch");
     });
 
@@ -325,14 +262,9 @@ describe("Multicall", () => {
       await expect(
         multicall
           .connect(USER_WITH_ROLE)
-          .multicallWithValues(
-            [multicallee],
-            [ENCODED_FUNCTIONS_TO_CALL.attackWithValue()],
-            [100],
-            {
-              value: 100,
-            }
-          )
+          .multicallWithValues([multicallee], [ENCODED_FUNCTIONS_TO_CALL.attackWithValue()], [100], {
+            value: 100,
+          }),
       ).to.be.rejectedWith("ReentrancyGuard: reentrant call");
     });
 
@@ -342,13 +274,10 @@ describe("Multicall", () => {
           .connect(USER_WITH_ROLE)
           .multicallWithValues(
             [multicallee, multicallee],
-            [
-              ENCODED_FUNCTIONS_TO_CALL.addMsgValueWithRole(),
-              ENCODED_FUNCTIONS_TO_CALL.addMsgValueWithRole(),
-            ],
+            [ENCODED_FUNCTIONS_TO_CALL.addMsgValueWithRole(), ENCODED_FUNCTIONS_TO_CALL.addMsgValueWithRole()],
             [100, 200],
-            { value: 299 }
-          )
+            { value: 299 },
+          ),
       ).to.be.rejectedWith("Address: insufficient balance for call");
     });
 
@@ -363,7 +292,7 @@ describe("Multicall", () => {
             ENCODED_FUNCTIONS_TO_CALL.addMsgValueWithRole(),
           ],
           [0, 100, 200],
-          { value: 300 }
+          { value: 300 },
         );
 
       expect(await multicallee.counter()).to.be.equal("311");
@@ -372,11 +301,7 @@ describe("Multicall", () => {
 
       await multicall
         .connect(USER_WITHOUT_ROLE)
-        .multicallWithValues(
-          [multicallee],
-          [ENCODED_FUNCTIONS_TO_CALL.addOneWithoutRole()],
-          [0]
-        );
+        .multicallWithValues([multicallee], [ENCODED_FUNCTIONS_TO_CALL.addOneWithoutRole()], [0]);
 
       expect(await multicallee.counter()).to.be.equal("312");
       expect(await provider.getBalance(multicallee)).to.be.equal(300);

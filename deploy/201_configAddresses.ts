@@ -5,8 +5,11 @@ import { getConfigJson } from "./config/config-parser";
 
 module.exports = async (deployer: Deployer) => {
   const registry = await deployer.deployed(MasterContractsRegistry__factory, "MasterContractsRegistry Proxy");
-  const masterAccess = await deployer.deployed(MasterAccessManagement__factory, await registry.getMasterAccessManagement());
-  
+  const masterAccess = await deployer.deployed(
+    MasterAccessManagement__factory,
+    await registry.getMasterAccessManagement(),
+  );
+
   const addressesConfig = getConfigJson().addresses;
 
   if (addressesConfig == undefined) {
@@ -23,6 +26,6 @@ module.exports = async (deployer: Deployer) => {
       throw new Error(`Empty roles list for address ${address}`);
     }
 
-    await masterAccess.grantRoles(address, roles), `Granted roles to ${address}`;
+    await masterAccess.grantRoles(address, roles);
   }
 };

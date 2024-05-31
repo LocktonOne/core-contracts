@@ -7,5 +7,5 @@ module.exports = async (deployer: Deployer) => {
 
   const reviewableRequests = await deployer.deploy(ReviewableRequests__factory);
 
-  await registry.addProxyContract(await registry.REVIEWABLE_REQUESTS_NAME(), await reviewableRequests.getAddress())
+  await registry.addProxyContract(await registry.REVIEWABLE_REQUESTS_NAME(), await reviewableRequests.getAddress());
 };

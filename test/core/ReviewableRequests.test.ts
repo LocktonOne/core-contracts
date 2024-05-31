@@ -16,7 +16,7 @@ import {
 } from "@/generated-types";
 import { ethers } from "hardhat";
 import { expect } from "chai";
-const { ZERO_ADDR } = require("../../scripts/utils/constants");
+import { ZERO_ADDR } from "@/scripts/utils/constants";
 
 describe("ReviewableRequests", () => {
   const reverter = new Reverter();
@@ -46,39 +46,26 @@ describe("ReviewableRequests", () => {
 
   before("setup", async () => {
     [OWNER, USER1, USER2] = await ethers.getSigners();
-    const MasterContractsRegistry = await ethers.getContractFactory(
-      "MasterContractsRegistry"
-    );
+    const MasterContractsRegistry = await ethers.getContractFactory("MasterContractsRegistry");
     registry = await MasterContractsRegistry.deploy();
 
-    const MasterAccessManagementFactory = await ethers.getContractFactory(
-      "MasterAccessManagement"
-    );
+    const MasterAccessManagementFactory = await ethers.getContractFactory("MasterAccessManagement");
     masterAccess = await MasterAccessManagementFactory.deploy();
-    const ReviewableRequests = await ethers.getContractFactory(
-      "ReviewableRequests"
-    );
+    const ReviewableRequests = await ethers.getContractFactory("ReviewableRequests");
     reviewableRequests = await ReviewableRequests.deploy();
 
     await registry.__MasterContractsRegistry_init(masterAccess);
 
     masterAccess = MasterAccessManagementFactory.attach(
-      await registry.getMasterAccessManagement()
+      await registry.getMasterAccessManagement(),
     ) as MasterAccessManagement;
     await masterAccess.__MasterAccessManagement_init(OWNER);
 
-    await registry.addProxyContract(
-      await registry.REVIEWABLE_REQUESTS_NAME(),
-      reviewableRequests
-    );
+    await registry.addProxyContract(await registry.REVIEWABLE_REQUESTS_NAME(), reviewableRequests);
 
-    reviewableRequests = ReviewableRequests.attach(
-      await registry.getReviewableRequests()
-    ) as ReviewableRequests;
+    reviewableRequests = ReviewableRequests.attach(await registry.getReviewableRequests()) as ReviewableRequests;
 
-    await registry.injectDependencies(
-      await registry.REVIEWABLE_REQUESTS_NAME()
-    );
+    await registry.injectDependencies(await registry.REVIEWABLE_REQUESTS_NAME());
 
     await reverter.snapshot();
   });
@@ -87,35 +74,18 @@ describe("ReviewableRequests", () => {
 
   describe("basic access", () => {
     it("should not set dependencies from non dependant", async () => {
-      await expect(
-        reviewableRequests.setDependencies(OWNER, "0x")
-      ).to.be.rejectedWith("Dependant: not an injector");
+      await expect(reviewableRequests.setDependencies(OWNER, "0x")).to.be.rejectedWith("Dependant: not an injector");
     });
   });
 
   describe("createRequest", () => {
     it("should create a reviewable request", async () => {
-      await masterAccess.addPermissionsToRole(
-        ReviewableRequestsRole,
-        [ReviewableRequestsCreate],
-        true
-      );
+      await masterAccess.addPermissionsToRole(ReviewableRequestsRole, [ReviewableRequestsCreate], true);
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
-      const receipt = await (
-        await reviewableRequests
-          .connect(USER1)
-          .createRequest(OWNER, "0x00", "0x11", "Misc", "Simple request")
-      ).wait();
-      if (!receipt) return;
-      expect(receipt.logs[0].fragment.name).to.be.equal("RequestCreated");
-      expect(receipt.logs[0].args.requestId).to.be.equal("0");
-      expect(receipt.logs[0].args.creator).to.be.equal(USER1);
-      expect(receipt.logs[0].args.executor).to.be.equal(OWNER);
-      expect(receipt.logs[0].args.acceptData).to.be.equal("0x00");
-      expect(receipt.logs[0].args.rejectData).to.be.equal("0x11");
-      expect(receipt.logs[0].args.misc).to.be.equal("Misc");
-      expect(receipt.logs[0].args.description).to.be.equal("Simple request");
+      await expect(reviewableRequests.connect(USER1).createRequest(OWNER, "0x00", "0x11", "Misc", "Simple request"))
+        .to.emit(reviewableRequests, "RequestCreated")
+        .withArgs("0", USER1, OWNER, "0x00", "0x11", "Misc", "Simple request");
 
       const request = await reviewableRequests.requests(0);
 
@@ -130,25 +100,17 @@ describe("ReviewableRequests", () => {
     });
 
     it("should not create reviewable request with zero address executor", async () => {
-      await masterAccess.addPermissionsToRole(
-        ReviewableRequestsRole,
-        [ReviewableRequestsCreate],
-        true
-      );
+      await masterAccess.addPermissionsToRole(ReviewableRequestsRole, [ReviewableRequestsCreate], true);
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
       await expect(
-        reviewableRequests
-          .connect(USER1)
-          .createRequest(ZERO_ADDR, "0x00", "0x11", "Misc", "Simple request")
+        reviewableRequests.connect(USER1).createRequest(ZERO_ADDR, "0x00", "0x11", "Misc", "Simple request"),
       ).to.be.rejectedWith("ReviewableRequests: zero executor");
     });
 
     it("should not create reviewable request without permissions", async () => {
       await expect(
-        reviewableRequests
-          .connect(USER1)
-          .createRequest(OWNER, "0x00", "0x11", "Misc", "Simple request")
+        reviewableRequests.connect(USER1).createRequest(OWNER, "0x00", "0x11", "Misc", "Simple request"),
       ).to.be.rejectedWith("ReviewableRequests: access denied");
     });
   });
@@ -158,66 +120,56 @@ describe("ReviewableRequests", () => {
       await masterAccess.addPermissionsToRole(
         ReviewableRequestsRole,
         [ReviewableRequestsCreate, ReviewableRequestsDelete],
-        true
+        true,
       );
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
-      await reviewableRequests
-        .connect(USER1)
-        .createRequest(OWNER, "0x", "0x", "Misc", "Simple request");
+      await reviewableRequests.connect(USER1).createRequest(OWNER, "0x", "0x", "Misc", "Simple request");
 
-      const receipt = await (
-        await reviewableRequests.connect(USER1).dropRequest(0)
-      ).wait();
+      const receipt = await (await reviewableRequests.connect(USER1).dropRequest(0)).wait();
       if (!receipt) return;
-      expect((await reviewableRequests.requests(0)).status).to.be.equal(
-        RequestStatus.DROPPED
-      );
+      expect((await reviewableRequests.requests(0)).status).to.be.equal(RequestStatus.DROPPED);
 
-      expect(receipt.logs[0].fragment.name).to.be.equal("RequestDropped");
-      expect(receipt.logs[0].args.requestId).to.be.equal("0");
+    expect(receipt.logs[0].fragment.name).to.be.equal("RequestDropped");
+    expect(receipt.logs[0].args.requestId).to.be.equal("0");
     });
 
     it("should not drop the reviewable request twice", async () => {
       await masterAccess.addPermissionsToRole(
         ReviewableRequestsRole,
         [ReviewableRequestsCreate, ReviewableRequestsDelete],
-        true
+        true,
       );
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
-      await reviewableRequests
-        .connect(USER1)
-        .createRequest(OWNER, "0x", "0x", "Misc", "Simple request");
+      await reviewableRequests.connect(USER1).createRequest(OWNER, "0x", "0x", "Misc", "Simple request");
 
       await reviewableRequests.connect(USER1).dropRequest(0);
-      await expect(
-        reviewableRequests.connect(USER1).dropRequest(0)
-      ).to.be.rejectedWith("ReviewableRequests: invalid request status");
+      await expect(reviewableRequests.connect(USER1).dropRequest(0)).to.be.rejectedWith(
+        "ReviewableRequests: invalid request status",
+      );
     });
 
     it("only creator should be able to drop the request", async () => {
       await masterAccess.addPermissionsToRole(
         ReviewableRequestsRole,
         [ReviewableRequestsCreate, ReviewableRequestsDelete],
-        true
+        true,
       );
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
       await masterAccess.grantRoles(USER2, [ReviewableRequestsRole]);
 
-      await reviewableRequests
-        .connect(USER1)
-        .createRequest(OWNER, "0x00", "0x11", "Misc", "Simple request");
+      await reviewableRequests.connect(USER1).createRequest(OWNER, "0x00", "0x11", "Misc", "Simple request");
 
-      await expect(
-        reviewableRequests.connect(USER2).dropRequest(0)
-      ).to.be.rejectedWith("ReviewableRequests: not a request creator");
+      await expect(reviewableRequests.connect(USER2).dropRequest(0)).to.be.rejectedWith(
+        "ReviewableRequests: not a request creator",
+      );
     });
 
     it("should not drop reviewable request without permission", async () => {
-      await expect(
-        reviewableRequests.connect(USER1).dropRequest(0)
-      ).to.be.rejectedWith("ReviewableRequests: access denied");
+      await expect(reviewableRequests.connect(USER1).dropRequest(0)).to.be.rejectedWith(
+        "ReviewableRequests: access denied",
+      );
     });
   });
 
@@ -226,24 +178,13 @@ describe("ReviewableRequests", () => {
       await masterAccess.addPermissionsToRole(
         ReviewableRequestsRole,
         [ReviewableRequestsCreate, ReviewableRequestsDelete],
-        true
+        true,
       );
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
-      await reviewableRequests
-        .connect(USER1)
-        .createRequest(OWNER, "0x00", "0x11", "Misc", "Simple request");
+      await reviewableRequests.connect(USER1).createRequest(OWNER, "0x00", "0x11", "Misc", "Simple request");
       const receipt = await (
-        await reviewableRequests
-          .connect(USER1)
-          .updateRequest(
-            0,
-            OWNER,
-            "0x1111",
-            "0x2222",
-            "Misc2",
-            "Updated request"
-          )
+        await reviewableRequests.connect(USER1).updateRequest(0, OWNER, "0x1111", "0x2222", "Misc2", "Updated request")
       ).wait();
       if (!receipt) return;
       expect(receipt.logs[0].fragment.name).to.be.equal("RequestUpdated");
@@ -274,17 +215,13 @@ describe("ReviewableRequests", () => {
       await masterAccess.addPermissionsToRole(
         ReviewableRequestsRole,
         [ReviewableRequestsCreate, ReviewableRequestsDelete],
-        true
+        true,
       );
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
-      await reviewableRequests
-        .connect(USER1)
-        .createRequest(OWNER, "0x00", "0x11", "Misc", "Simple request");
+      await reviewableRequests.connect(USER1).createRequest(OWNER, "0x00", "0x11", "Misc", "Simple request");
       const receipt = await (
-        await reviewableRequests
-          .connect(USER1)
-          .updateRequest(0, USER2, "0x", "0x", "Misc2", "Updated request")
+        await reviewableRequests.connect(USER1).updateRequest(0, USER2, "0x", "0x", "Misc2", "Updated request")
       ).wait();
       if (!receipt) return;
       expect(receipt.logs[0].fragment.name).to.be.equal("RequestUpdated");
@@ -315,14 +252,12 @@ describe("ReviewableRequests", () => {
       await masterAccess.addPermissionsToRole(
         ReviewableRequestsRole,
         [ReviewableRequestsCreate, ReviewableRequestsDelete],
-        true
+        true,
       );
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
       await expect(
-        reviewableRequests
-          .connect(USER1)
-          .updateRequest(123, OWNER, "0x00", "0x11", "Misc", "Simple request")
+        reviewableRequests.connect(USER1).updateRequest(123, OWNER, "0x00", "0x11", "Misc", "Simple request"),
       ).to.be.rejectedWith("ReviewableRequests: invalid request status");
     });
 
@@ -330,48 +265,29 @@ describe("ReviewableRequests", () => {
       await masterAccess.addPermissionsToRole(
         ReviewableRequestsRole,
         [ReviewableRequestsCreate, ReviewableRequestsDelete],
-        true
+        true,
       );
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
       await masterAccess.grantRoles(USER2, [ReviewableRequestsRole]);
 
-      await reviewableRequests
-        .connect(USER1)
-        .createRequest(OWNER, "0x00", "0x11", "Misc", "Simple request");
+      await reviewableRequests.connect(USER1).createRequest(OWNER, "0x00", "0x11", "Misc", "Simple request");
 
       await expect(
-        reviewableRequests
-          .connect(USER2)
-          .updateRequest(
-            0,
-            ZERO_ADDR,
-            "0x",
-            "0x",
-            "Misc2",
-            "Left request untouched"
-          )
+        reviewableRequests.connect(USER2).updateRequest(0, ZERO_ADDR, "0x", "0x", "Misc2", "Left request untouched"),
       ).to.be.rejectedWith("ReviewableRequests: not a request creator");
     });
 
     it("should not update reviewable request without permissions", async () => {
-      await masterAccess.addPermissionsToRole(
-        ReviewableRequestsRole,
-        [ReviewableRequestsCreate],
-        true
-      );
+      await masterAccess.addPermissionsToRole(ReviewableRequestsRole, [ReviewableRequestsCreate], true);
 
       await expect(
-        reviewableRequests
-          .connect(USER1)
-          .updateRequest(0, OWNER, "0x00", "0x11", "Misc", "Simple request")
+        reviewableRequests.connect(USER1).updateRequest(0, OWNER, "0x00", "0x11", "Misc", "Simple request"),
       ).to.be.rejectedWith("ReviewableRequests: access denied");
 
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
       await expect(
-        reviewableRequests
-          .connect(USER1)
-          .updateRequest(0, OWNER, "0x00", "0x11", "Misc", "Simple request")
+        reviewableRequests.connect(USER1).updateRequest(0, OWNER, "0x00", "0x11", "Misc", "Simple request"),
       ).to.be.rejectedWith("ReviewableRequests: access denied");
     });
   });
@@ -380,9 +296,7 @@ describe("ReviewableRequests", () => {
     let executor: RequestExecutorMock;
 
     beforeEach("setup", async () => {
-      const RequestExecutorMock = await ethers.getContractFactory(
-        "RequestExecutorMock"
-      );
+      const RequestExecutorMock = await ethers.getContractFactory("RequestExecutorMock");
       executor = await RequestExecutorMock.deploy();
     });
 
@@ -390,29 +304,17 @@ describe("ReviewableRequests", () => {
       await masterAccess.addPermissionsToRole(
         ReviewableRequestsRole,
         [ReviewableRequestsCreate, ReviewableRequestsExecute],
-        true
+        true,
       );
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
       await reviewableRequests
         .connect(USER1)
-        .createRequest(
-          executor,
-          (
-            await executor.requestAccept()
-          ).data,
-          "0x",
-          "Misc",
-          "Simple request"
-        );
+        .createRequest(executor, (await executor.requestAccept()).data, "0x", "Misc", "Simple request");
 
-      const receipt = await (
-        await reviewableRequests.connect(USER1).acceptRequest(0)
-      ).wait();
+      const receipt = await (await reviewableRequests.connect(USER1).acceptRequest(0)).wait();
 
-      expect((await reviewableRequests.requests(0)).status).to.be.equal(
-        RequestStatus.ACCEPTED
-      );
+      expect((await reviewableRequests.requests(0)).status).to.be.equal(RequestStatus.ACCEPTED);
       expect(await executor.status()).to.be.equal("1");
       if (!receipt) return;
       expect(receipt.logs[0].fragment.name).to.be.equal("RequestAccepted");
@@ -423,12 +325,10 @@ describe("ReviewableRequests", () => {
       await masterAccess.addPermissionsToRole(
         ReviewableRequestsRole,
         [ReviewableRequestsCreate, ReviewableRequestsExecute],
-        true
+        true,
       );
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
-      const RequestExecutorMock = await ethers.getContractFactory(
-        "RequestExecutorMock"
-      );
+      const RequestExecutorMock = await ethers.getContractFactory("RequestExecutorMock");
 
       await reviewableRequests
         .connect(USER1)
@@ -437,60 +337,49 @@ describe("ReviewableRequests", () => {
           RequestExecutorMock.interface.encodeFunctionData("requestRevert"),
           "0x",
           "Misc",
-          "Simple request"
+          "Simple request",
         );
 
-      await expect(
-        reviewableRequests.connect(USER1).acceptRequest(0)
-      ).to.be.rejectedWith("ReviewableRequests: failed to accept request");
+      await expect(reviewableRequests.connect(USER1).acceptRequest(0)).to.be.rejectedWith(
+        "ReviewableRequests: failed to accept request",
+      );
     });
 
     it("should accept the request with empty data", async () => {
       await masterAccess.addPermissionsToRole(
         ReviewableRequestsRole,
         [ReviewableRequestsCreate, ReviewableRequestsExecute],
-        true
+        true,
       );
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
-      await reviewableRequests
-        .connect(USER1)
-        .createRequest(executor, "0x", "0x11", "Misc", "Simple request");
+      await reviewableRequests.connect(USER1).createRequest(executor, "0x", "0x11", "Misc", "Simple request");
 
-      await expect(reviewableRequests.connect(USER1).acceptRequest(0), "pass")
-        .to.be.fulfilled;
+      await expect(reviewableRequests.connect(USER1).acceptRequest(0), "pass").to.be.fulfilled;
     });
 
     it("should not accept the request twice", async () => {
       await masterAccess.addPermissionsToRole(
         ReviewableRequestsRole,
         [ReviewableRequestsCreate, ReviewableRequestsExecute],
-        true
+        true,
       );
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
       await reviewableRequests
         .connect(USER1)
-        .createRequest(
-          executor,
-          (
-            await executor.requestAccept()
-          ).data,
-          "0x",
-          "Misc",
-          "Simple request"
-        );
+        .createRequest(executor, (await executor.requestAccept()).data, "0x", "Misc", "Simple request");
 
       await reviewableRequests.connect(USER1).acceptRequest(0);
-      await expect(
-        reviewableRequests.connect(USER1).acceptRequest(0)
-      ).to.be.rejectedWith("ReviewableRequests: invalid request status");
+      await expect(reviewableRequests.connect(USER1).acceptRequest(0)).to.be.rejectedWith(
+        "ReviewableRequests: invalid request status",
+      );
     });
 
     it("should not accept reviewable request without permission", async () => {
-      await expect(
-        reviewableRequests.connect(USER1).acceptRequest(0)
-      ).to.be.rejectedWith("ReviewableRequests: access denied");
+      await expect(reviewableRequests.connect(USER1).acceptRequest(0)).to.be.rejectedWith(
+        "ReviewableRequests: access denied",
+      );
     });
   });
 
@@ -498,38 +387,24 @@ describe("ReviewableRequests", () => {
     let executor: RequestExecutorMock;
 
     beforeEach("setup", async () => {
-      const RequestExecutorMock = await ethers.getContractFactory(
-        "RequestExecutorMock"
-      );
+      const RequestExecutorMock = await ethers.getContractFactory("RequestExecutorMock");
       executor = await RequestExecutorMock.deploy();
     });
     it("should reject the reviewable request", async () => {
       await masterAccess.addPermissionsToRole(
         ReviewableRequestsRole,
         [ReviewableRequestsCreate, ReviewableRequestsExecute],
-        true
+        true,
       );
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
       await reviewableRequests
         .connect(USER1)
-        .createRequest(
-          executor,
-          "0x",
-          (
-            await executor.requestReject()
-          ).data,
-          "Misc",
-          "Simple request"
-        );
+        .createRequest(executor, "0x", (await executor.requestReject()).data, "Misc", "Simple request");
 
-      const receipt = await (
-        await reviewableRequests.connect(USER1).rejectRequest(0, "rejected")
-      ).wait();
+      const receipt = await (await reviewableRequests.connect(USER1).rejectRequest(0, "rejected")).wait();
 
-      expect((await reviewableRequests.requests(0)).status).to.be.equal(
-        RequestStatus.REJECTED
-      );
+      expect((await reviewableRequests.requests(0)).status).to.be.equal(RequestStatus.REJECTED);
       expect(await executor.status()).to.be.equal("2");
       if (!receipt) return;
       expect(receipt.logs[0].fragment.name).to.be.equal("RequestRejected");
@@ -541,12 +416,10 @@ describe("ReviewableRequests", () => {
       await masterAccess.addPermissionsToRole(
         ReviewableRequestsRole,
         [ReviewableRequestsCreate, ReviewableRequestsExecute],
-        true
+        true,
       );
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
-      const RequestExecutorMock = await ethers.getContractFactory(
-        "RequestExecutorMock"
-      );
+      const RequestExecutorMock = await ethers.getContractFactory("RequestExecutorMock");
 
       await reviewableRequests
         .connect(USER1)
@@ -555,37 +428,32 @@ describe("ReviewableRequests", () => {
           "0x",
           RequestExecutorMock.interface.encodeFunctionData("requestRevert"),
           "Misc",
-          "Simple request"
+          "Simple request",
         );
 
-      await expect(
-        reviewableRequests.connect(USER1).rejectRequest(0, "rejected")
-      ).to.be.rejectedWith("ReviewableRequests: failed to reject request");
+      await expect(reviewableRequests.connect(USER1).rejectRequest(0, "rejected")).to.be.rejectedWith(
+        "ReviewableRequests: failed to reject request",
+      );
     });
 
     it("should reject the request with empty data", async () => {
       await masterAccess.addPermissionsToRole(
         ReviewableRequestsRole,
         [ReviewableRequestsCreate, ReviewableRequestsExecute],
-        true
+        true,
       );
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
-      await reviewableRequests
-        .connect(USER1)
-        .createRequest(executor, "0x11", "0x", "Misc", "Simple request");
+      await reviewableRequests.connect(USER1).createRequest(executor, "0x11", "0x", "Misc", "Simple request");
 
-      await expect(
-        reviewableRequests.connect(USER1).rejectRequest(0, "rejected"),
-        "pass"
-      ).to.be.fulfilled;
+      await expect(reviewableRequests.connect(USER1).rejectRequest(0, "rejected"), "pass").to.be.fulfilled;
     });
 
     it("should not reject the request twice", async () => {
       await masterAccess.addPermissionsToRole(
         ReviewableRequestsRole,
         [ReviewableRequestsCreate, ReviewableRequestsExecute],
-        true
+        true,
       );
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
@@ -593,26 +461,22 @@ describe("ReviewableRequests", () => {
         .connect(USER1)
         .createRequest(
           executor,
-          (
-            await executor.requestAccept()
-          ).data,
-          (
-            await executor.requestReject()
-          ).data,
+          (await executor.requestAccept()).data,
+          (await executor.requestReject()).data,
           "Misc",
-          "Simple request"
+          "Simple request",
         );
 
       await reviewableRequests.connect(USER1).acceptRequest(0);
-      await expect(
-        reviewableRequests.connect(USER1).rejectRequest(0, "rejected")
-      ).to.be.rejectedWith("ReviewableRequests: invalid request status");
+      await expect(reviewableRequests.connect(USER1).rejectRequest(0, "rejected")).to.be.rejectedWith(
+        "ReviewableRequests: invalid request status",
+      );
     });
 
     it("should not accept reviewable request without permission", async () => {
-      await expect(
-        reviewableRequests.connect(USER1).rejectRequest(0, "rejected")
-      ).to.be.rejectedWith("ReviewableRequests: access denied");
+      await expect(reviewableRequests.connect(USER1).rejectRequest(0, "rejected")).to.be.rejectedWith(
+        "ReviewableRequests: access denied",
+      );
     });
   });
 });

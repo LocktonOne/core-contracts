@@ -45,13 +45,11 @@ describe("MasterContractsRegistry", async () => {
 
     const ERC1967Proxy = await ethers.getContractFactory("ERC1967Proxy");
     const proxy = await ERC1967Proxy.deploy(await registry.getAddress(), "0x");
-    registry = MasterContractsRegistry.attach(proxy) as MasterContractsRegistry;
+    registry = await ethers.getContractAt("MasterContractsRegistry", proxy);
 
     await registry.__MasterContractsRegistry_init(masterAccess);
 
-    masterAccess = MasterAccessManagementFactory.attach(
-      await registry.getMasterAccessManagement(),
-    ) as MasterAccessManagement;
+    masterAccess = await ethers.getContractAt("MasterAccessManagement", await registry.getMasterAccessManagement());
     await masterAccess.__MasterAccessManagement_init(OWNER);
 
     await registry.addProxyContract(await registry.CONSTANTS_REGISTRY_NAME(), constantsRegistry);
@@ -65,17 +63,19 @@ describe("MasterContractsRegistry", async () => {
   describe("constructor", () => {
     it("should emit Initialized event", async () => {
       const MasterContractsRegistry = await ethers.getContractFactory("MasterContractsRegistry");
-      const _registry = await MasterContractsRegistry.deploy();
+      let registry: MasterContractsRegistry = await MasterContractsRegistry.deploy();
       const ERC1967Proxy = await ethers.getContractFactory("ERC1967Proxy");
-      const registryProxy = await ERC1967Proxy.deploy(await _registry.getAddress(), "0x");
+      const registryProxy = await ERC1967Proxy.deploy(await registry.getAddress(), "0x");
 
-      const newRegistry = MasterContractsRegistry.attach(registryProxy) as MasterContractsRegistry;
+      registry = await ethers.getContractAt("MasterContractsRegistry", await registryProxy.getAddress());
 
       const MasterAccessManagementFactory = await ethers.getContractFactory("MasterAccessManagement");
       const _masterAccess = await MasterAccessManagementFactory.deploy();
 
-      let receipt = await (await newRegistry.__MasterContractsRegistry_init(_masterAccess)).wait();
-      if (receipt) expect(receipt.logs[3].fragment.name).to.be.equal("Initialized");
+      await expect(registry.__MasterContractsRegistry_init(await _masterAccess.getAddress())).to.emit(
+        registry,
+        "Initialized()",
+      );
     });
   });
 

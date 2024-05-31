@@ -175,20 +175,13 @@ describe("MasterAccessManagement", async () => {
     it("should emit AddedRoleWithDescription event", async () => {
       const description = "Allows dropping requests";
 
-      let tx = await masterAccess.addCombinedPermissionsToRole(
-        ReviewableRequestsRole,
-        description,
-        [ReviewableRequestsDelete],
-        [],
-      );
-      const receipt = await tx.wait();
+      await expect(
+        masterAccess.addCombinedPermissionsToRole(ReviewableRequestsRole, description, [ReviewableRequestsDelete], []),
+      )
+        .to.emit(masterAccess, "AddedPermissions")
+        .to.emit(masterAccess, "AddedRoleWithDescription")
+        .withArgs(ReviewableRequestsRole, description);
 
-      if (receipt) {
-        expect(receipt.logs[0].fragment.name).to.be.equal("AddedPermissions");
-        expect(receipt.logs[1].fragment.name).to.be.equal("AddedRoleWithDescription");
-        expect(receipt.logs[1].args.role).to.be.equal(ReviewableRequestsRole);
-        expect(receipt.logs[1].args.description).to.be.equal(description);
-      }
       expect(await masterAccess.hasReviewableRequestsDeletePermission(USER1)).to.be.false;
 
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
@@ -199,21 +192,17 @@ describe("MasterAccessManagement", async () => {
     it("should add both permissions", async () => {
       const description = "Disallows dropping requests";
 
-      let tx = await masterAccess.addCombinedPermissionsToRole(
-        ReviewableRequestsRole,
-        description,
-        [ReviewableRequestsDelete],
-        [ReviewableRequestsDelete],
-      );
-      const receipt = await tx.wait();
-
-      if (receipt) {
-        expect(receipt.logs[0].fragment.name).to.be.equal("AddedPermissions");
-        expect(receipt.logs[1].fragment.name).to.be.equal("AddedPermissions");
-        expect(receipt.logs[2].fragment.name).to.be.equal("AddedRoleWithDescription");
-        expect(receipt.logs[2].args.role).to.be.equal(ReviewableRequestsRole);
-        expect(receipt.logs[2].args.description).to.be.equal(description);
-      }
+      await expect(
+        masterAccess.addCombinedPermissionsToRole(
+          ReviewableRequestsRole,
+          description,
+          [ReviewableRequestsDelete],
+          [ReviewableRequestsDelete],
+        ),
+      )
+        .to.emit(masterAccess, "AddedPermissions")
+        .to.emit(masterAccess, "AddedRoleWithDescription")
+        .withArgs(ReviewableRequestsRole, description);
 
       expect(await masterAccess.hasReviewableRequestsDeletePermission(USER1)).to.be.false;
 
@@ -259,23 +248,21 @@ describe("MasterAccessManagement", async () => {
 
       const description = "Updated description";
 
-      let tx = await masterAccess.updateRolePermissions(
-        ReviewableRequestsRole,
-        description,
-        [],
-        [ReviewableRequestsDelete],
-        [ConstantsRegistryCreate],
-        [],
-      );
-      const receipt = await tx.wait();
+      await expect(
+        masterAccess.updateRolePermissions(
+          ReviewableRequestsRole,
+          description,
+          [],
+          [ReviewableRequestsDelete],
+          [ConstantsRegistryCreate],
+          [],
+        ),
+      )
+        .to.emit(masterAccess, "RemovedPermissions")
+        .to.emit(masterAccess, "AddedPermissions")
+        .to.emit(masterAccess, "AddedRoleWithDescription")
+        .withArgs(ReviewableRequestsRole, description);
 
-      if (receipt) {
-        expect(receipt.logs[0].fragment.name).to.be.equal("RemovedPermissions");
-        expect(receipt.logs[1].fragment.name).to.be.equal("AddedPermissions");
-        expect(receipt.logs[2].fragment.name).to.be.equal("AddedRoleWithDescription");
-        expect(receipt.logs[2].args.role).to.be.equal(ReviewableRequestsRole);
-        expect(receipt.logs[2].args.description).to.be.equal(description);
-      }
       expect(await masterAccess.hasReviewableRequestsDeletePermission(USER1)).to.be.true;
       expect(await masterAccess.hasConstantsRegistryCreatePermission(USER1)).to.be.true;
     });

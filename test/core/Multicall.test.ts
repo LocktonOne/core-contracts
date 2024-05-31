@@ -104,14 +104,12 @@ describe("Multicall", () => {
 
     await registry.__MasterContractsRegistry_init(masterAccess);
 
-    masterAccess = MasterAccessManagementFactory.attach(
-      await registry.getMasterAccessManagement(),
-    ) as MasterAccessManagement;
+    masterAccess = await ethers.getContractAt("MasterAccessManagement", await registry.getMasterAccessManagement());
     await masterAccess.__MasterAccessManagement_init(OWNER);
 
     await registry.addProxyContract(await registry.MULTICALL_NAME(), multicall);
 
-    multicall = Multicall.attach(await registry.getMulticall()) as MulticallMock;
+    multicall = await ethers.getContractAt("MulticallMock", await registry.getMulticall());
     await multicall.__Multicall_init();
 
     await registry.injectDependencies(await registry.MULTICALL_NAME());
@@ -131,7 +129,7 @@ describe("Multicall", () => {
     await masterAccess.grantRoles(await multicall.getAddress(), [await masterAccess.MASTER_ROLE()]);
     await masterAccess.grantRoles(USER_WITH_ROLE, [MULTICALLEE_CALLER_ROLE]);
     const MulticallExecutor = await ethers.getContractFactory("MulticallExecutor");
-    executor = MulticallExecutor.attach(await multicall.getMulticallExecutor()) as MulticallExecutor;
+    executor = await ethers.getContractAt("MulticallExecutor", await multicall.getMulticallExecutor());
 
     await reverter.snapshot();
   });

@@ -39,13 +39,11 @@ describe("ConstantsRegistry", () => {
     constantsRegistry = await ConstantsRegistryFactory.deploy();
 
     await registry.__MasterContractsRegistry_init(masterAccess);
-    masterAccess = MasterAccessManagementFactory.attach(
-      await registry.getMasterAccessManagement(),
-    ) as MasterAccessManagement;
+    masterAccess = await ethers.getContractAt("MasterAccessManagement", await registry.getMasterAccessManagement());
     await masterAccess.__MasterAccessManagement_init(OWNER);
 
     await registry.addProxyContract(await registry.CONSTANTS_REGISTRY_NAME(), constantsRegistry);
-    constantsRegistry = ConstantsRegistryFactory.attach(await registry.getConstantsRegistry()) as ConstantsRegistry;
+    constantsRegistry = await ethers.getContractAt("ConstantsRegistry", await registry.getConstantsRegistry());
     await registry.injectDependencies(await registry.CONSTANTS_REGISTRY_NAME());
 
     await reverter.snapshot();

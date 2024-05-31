@@ -56,14 +56,12 @@ describe("ReviewableRequests", () => {
 
     await registry.__MasterContractsRegistry_init(masterAccess);
 
-    masterAccess = MasterAccessManagementFactory.attach(
-      await registry.getMasterAccessManagement(),
-    ) as MasterAccessManagement;
+    masterAccess = await ethers.getContractAt("MasterAccessManagement", await registry.getMasterAccessManagement());
     await masterAccess.__MasterAccessManagement_init(OWNER);
 
     await registry.addProxyContract(await registry.REVIEWABLE_REQUESTS_NAME(), reviewableRequests);
 
-    reviewableRequests = ReviewableRequests.attach(await registry.getReviewableRequests()) as ReviewableRequests;
+    reviewableRequests = await ethers.getContractAt("ReviewableRequests", await registry.getReviewableRequests());
 
     await registry.injectDependencies(await registry.REVIEWABLE_REQUESTS_NAME());
 
@@ -126,12 +124,11 @@ describe("ReviewableRequests", () => {
 
       await reviewableRequests.connect(USER1).createRequest(OWNER, "0x", "0x", "Misc", "Simple request");
 
-      const receipt = await (await reviewableRequests.connect(USER1).dropRequest(0)).wait();
-      if (!receipt) return;
-      expect((await reviewableRequests.requests(0)).status).to.be.equal(RequestStatus.DROPPED);
+      await expect(reviewableRequests.connect(USER1).dropRequest(0))
+        .to.emit(reviewableRequests, "RequestDropped")
+        .withArgs("0");
 
-      expect(receipt.logs[0].fragment.name).to.be.equal("RequestDropped");
-      expect(receipt.logs[0].args.requestId).to.be.equal("0");
+      expect((await reviewableRequests.requests(0)).status).to.be.equal(RequestStatus.DROPPED);
     });
 
     it("should not drop the reviewable request twice", async () => {
@@ -183,18 +180,11 @@ describe("ReviewableRequests", () => {
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
       await reviewableRequests.connect(USER1).createRequest(OWNER, "0x00", "0x11", "Misc", "Simple request");
-      const receipt = await (
-        await reviewableRequests.connect(USER1).updateRequest(0, OWNER, "0x1111", "0x2222", "Misc2", "Updated request")
-      ).wait();
-      if (!receipt) return;
-      expect(receipt.logs[0].fragment.name).to.be.equal("RequestUpdated");
-      expect(receipt.logs[0].args.requestId).to.be.equal("0");
-      expect(receipt.logs[0].args.newRequestId).to.be.equal("1");
-      expect(receipt.logs[0].args.executor).to.be.equal(OWNER);
-      expect(receipt.logs[0].args.acceptData).to.be.equal("0x1111");
-      expect(receipt.logs[0].args.rejectData).to.be.equal("0x2222");
-      expect(receipt.logs[0].args.misc).to.be.equal("Misc2");
-      expect(receipt.logs[0].args.description).to.be.equal("Updated request");
+      await expect(
+        reviewableRequests.connect(USER1).updateRequest(0, OWNER, "0x1111", "0x2222", "Misc2", "Updated request"),
+      )
+        .to.emit(reviewableRequests, "RequestUpdated")
+        .withArgs("0", "1", OWNER, "0x1111", "0x2222", "Misc2", "Updated request");
 
       const request = await reviewableRequests.requests(0);
       const newRequest = await reviewableRequests.requests(1);
@@ -220,18 +210,10 @@ describe("ReviewableRequests", () => {
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
       await reviewableRequests.connect(USER1).createRequest(OWNER, "0x00", "0x11", "Misc", "Simple request");
-      const receipt = await (
-        await reviewableRequests.connect(USER1).updateRequest(0, USER2, "0x", "0x", "Misc2", "Updated request")
-      ).wait();
-      if (!receipt) return;
-      expect(receipt.logs[0].fragment.name).to.be.equal("RequestUpdated");
-      expect(receipt.logs[0].args.requestId).to.be.equal("0");
-      expect(receipt.logs[0].args.newRequestId).to.be.equal("1");
-      expect(receipt.logs[0].args.executor).to.be.equal(USER2);
-      expect(receipt.logs[0].args.acceptData).to.be.equal("0x");
-      expect(receipt.logs[0].args.rejectData).to.be.equal("0x");
-      expect(receipt.logs[0].args.misc).to.be.equal("Misc2");
-      expect(receipt.logs[0].args.description).to.be.equal("Updated request");
+
+      await expect(reviewableRequests.connect(USER1).updateRequest(0, USER2, "0x", "0x", "Misc2", "Updated request"))
+        .to.emit(reviewableRequests, "RequestUpdated")
+        .withArgs("0", "1", USER2, "0x", "0x", "Misc2", "Updated request");
 
       const request = await reviewableRequests.requests(0);
       const newRequest = await reviewableRequests.requests(1);
@@ -312,13 +294,12 @@ describe("ReviewableRequests", () => {
         .connect(USER1)
         .createRequest(executor, (await executor.requestAccept()).data, "0x", "Misc", "Simple request");
 
-      const receipt = await (await reviewableRequests.connect(USER1).acceptRequest(0)).wait();
+      await expect(reviewableRequests.connect(USER1).acceptRequest(0))
+        .to.emit(reviewableRequests, "RequestAccepted")
+        .withArgs("0");
 
       expect((await reviewableRequests.requests(0)).status).to.be.equal(RequestStatus.ACCEPTED);
       expect(await executor.status()).to.be.equal("1");
-      if (!receipt) return;
-      expect(receipt.logs[0].fragment.name).to.be.equal("RequestAccepted");
-      expect(receipt.logs[0].args.requestId).to.be.equal("0");
     });
 
     it("should revert the reviewable request", async () => {
@@ -402,14 +383,12 @@ describe("ReviewableRequests", () => {
         .connect(USER1)
         .createRequest(executor, "0x", (await executor.requestReject()).data, "Misc", "Simple request");
 
-      const receipt = await (await reviewableRequests.connect(USER1).rejectRequest(0, "rejected")).wait();
+      await expect(reviewableRequests.connect(USER1).rejectRequest(0, "rejected"))
+        .to.emit(reviewableRequests, "RequestRejected")
+        .withArgs("0", "rejected");
 
       expect((await reviewableRequests.requests(0)).status).to.be.equal(RequestStatus.REJECTED);
       expect(await executor.status()).to.be.equal("2");
-      if (!receipt) return;
-      expect(receipt.logs[0].fragment.name).to.be.equal("RequestRejected");
-      expect(receipt.logs[0].args.requestId).to.be.equal("0");
-      expect(receipt.logs[0].args.reason).to.be.equal("rejected");
     });
 
     it("should revert the reviewable request", async () => {

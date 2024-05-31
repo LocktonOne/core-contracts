@@ -1,6 +1,8 @@
 import { Deployer } from "@solarity/hardhat-migrate";
-import { getConfigJson } from "./config/config-parser";
+
 import { MasterContractsRegistry__factory } from "@/generated-types";
+
+import { getConfigJson } from "./config/config-parser";
 
 module.exports = async (deployer: Deployer) => {
   if (process.env.VAULT_DISABLED && process.env.VAULT_DISABLED === "true") return;

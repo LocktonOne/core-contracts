@@ -1,12 +1,7 @@
 import { CREATE_PERMISSION, DELETE_PERMISSION, MASTER_REGISTRY_RESOURCE, UPDATE_PERMISSION } from "../utils/constants";
 
 import { Reverter } from "../helpers/reverter";
-import {
-  MasterAccessManagement,
-  ConstantsRegistry,
-  MasterContractsRegistry,
-  IRBAC,
-} from "@ethers-v6";
+import { MasterAccessManagement, ConstantsRegistry, MasterContractsRegistry, IRBAC } from "@ethers-v6";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ethers } from "hardhat";
 import { expect } from "chai";

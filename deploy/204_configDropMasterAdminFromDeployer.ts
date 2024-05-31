@@ -1,5 +1,6 @@
-import { MasterAccessManagement__factory, MasterContractsRegistry__factory } from "@/generated-types";
 import { Deployer } from "@solarity/hardhat-migrate";
+
+import { MasterAccessManagement__factory, MasterContractsRegistry__factory } from "@/generated-types";
 
 import { getConfigJson } from "./config/config-parser";
 

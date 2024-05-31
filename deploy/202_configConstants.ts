@@ -1,8 +1,6 @@
-import {
-  ConstantsRegistry__factory,
-  MasterContractsRegistry__factory,
-} from "@/generated-types";
 import { Deployer } from "@solarity/hardhat-migrate";
+
+import { ConstantsRegistry__factory, MasterContractsRegistry__factory } from "@/generated-types";
 
 import { getConfigJson } from "./config/config-parser";
 

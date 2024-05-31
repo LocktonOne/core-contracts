@@ -1,9 +1,10 @@
+import { Deployer } from "@solarity/hardhat-migrate";
+
 import {
   MasterAccessManagement__factory,
   MasterContractsRegistry__factory,
   Multicall__factory,
 } from "@/generated-types";
-import { Deployer } from "@solarity/hardhat-migrate";
 
 module.exports = async (deployer: Deployer) => {
   const registry = await deployer.deployed(MasterContractsRegistry__factory, "MasterContractsRegistry Proxy");

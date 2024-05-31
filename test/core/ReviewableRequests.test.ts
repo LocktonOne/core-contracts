@@ -130,8 +130,8 @@ describe("ReviewableRequests", () => {
       if (!receipt) return;
       expect((await reviewableRequests.requests(0)).status).to.be.equal(RequestStatus.DROPPED);
 
-    expect(receipt.logs[0].fragment.name).to.be.equal("RequestDropped");
-    expect(receipt.logs[0].args.requestId).to.be.equal("0");
+      expect(receipt.logs[0].fragment.name).to.be.equal("RequestDropped");
+      expect(receipt.logs[0].args.requestId).to.be.equal("0");
     });
 
     it("should not drop the reviewable request twice", async () => {

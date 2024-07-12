@@ -2,7 +2,7 @@ import { Deployer } from "@solarity/hardhat-migrate";
 
 import { MasterAccessManagement__factory, MasterContractsRegistry__factory } from "@ethers-v6";
 
-module.exports = async (deployer: Deployer) => {
+export = async (deployer: Deployer) => {
   const deployerAccount = await deployer.getSigner();
 
   const registry = await deployer.deployed(MasterContractsRegistry__factory, "MasterContractsRegistry Proxy");

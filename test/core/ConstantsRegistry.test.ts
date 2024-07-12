@@ -1,11 +1,14 @@
+import { expect } from "chai";
+import { ethers } from "hardhat";
+
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+
+import { Reverter } from "@/test/helpers/reverter";
+
+import { ETHER_ADDR, ZERO_BYTES32 } from "@/scripts/utils/constants";
 import { CREATE_PERMISSION, DELETE_PERMISSION, CONSTANTS_REGISTRY_RESOURCE } from "../utils/constants";
 
-import { Reverter } from "../helpers/reverter";
-import { ETHER_ADDR, ZERO_ADDR, ZERO_BYTES32 } from "@/scripts/utils/constants";
 import { MasterAccessManagement, ConstantsRegistry, MasterContractsRegistry, IRBAC } from "@ethers-v6";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ethers } from "hardhat";
-import { expect } from "chai";
 
 describe("ConstantsRegistry", () => {
   const reverter = new Reverter();
@@ -184,12 +187,12 @@ describe("ConstantsRegistry", () => {
       });
 
       it("should be possible to add a zero address constant", async () => {
-        expect(await constantsRegistry.connect(USER1).addAddress(key, ZERO_ADDR)).to.emit(
+        expect(await constantsRegistry.connect(USER1).addAddress(key, ethers.ZeroAddress)).to.emit(
           constantsRegistry,
           "AddedAddress",
         );
 
-        expect(await constantsRegistry["getAddress(string)"](key)).to.be.equal(ZERO_ADDR);
+        expect(await constantsRegistry["getAddress(string)"](key)).to.be.equal(ethers.ZeroAddress);
       });
     });
   });

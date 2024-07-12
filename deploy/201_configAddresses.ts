@@ -4,7 +4,7 @@ import { MasterAccessManagement__factory, MasterContractsRegistry__factory } fro
 
 import { getConfigJson } from "./config/config-parser";
 
-module.exports = async (deployer: Deployer) => {
+export = async (deployer: Deployer) => {
   const registry = await deployer.deployed(MasterContractsRegistry__factory, "MasterContractsRegistry Proxy");
   const masterAccess = await deployer.deployed(
     MasterAccessManagement__factory,

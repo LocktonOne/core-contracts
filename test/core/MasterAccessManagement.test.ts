@@ -1,5 +1,10 @@
-import { IRBAC, MasterAccessManagement } from "@/generated-types";
+import { expect } from "chai";
+import { ethers } from "hardhat";
+
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+
+import { Reverter } from "@/test/helpers/reverter";
+
 import {
   CREATE_PERMISSION,
   DELETE_PERMISSION,
@@ -10,10 +15,7 @@ import {
   EXECUTE_PERMISSION,
 } from "../utils/constants";
 
-import { Reverter } from "../helpers/reverter";
-
-import { ethers } from "hardhat";
-import { expect } from "chai";
+import { IRBAC, MasterAccessManagement } from "@ethers-v6";
 
 describe("MasterAccessManagement", async () => {
   const reverter = new Reverter();

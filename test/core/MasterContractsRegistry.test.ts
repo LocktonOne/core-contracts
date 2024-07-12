@@ -1,10 +1,19 @@
+import { expect } from "chai";
+import { ethers } from "hardhat";
+
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+
+import { Reverter } from "@/test/helpers/reverter";
+
 import { CREATE_PERMISSION, DELETE_PERMISSION, MASTER_REGISTRY_RESOURCE, UPDATE_PERMISSION } from "../utils/constants";
 
-import { Reverter } from "../helpers/reverter";
-import { MasterAccessManagement, ConstantsRegistry, MasterContractsRegistry, IRBAC } from "@ethers-v6";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ethers } from "hardhat";
-import { expect } from "chai";
+import {
+  MasterAccessManagement,
+  ConstantsRegistry,
+  MasterContractsRegistry,
+  IRBAC,
+  TransparentUpgradeableProxy,
+} from "@ethers-v6";
 
 describe("MasterContractsRegistry", async () => {
   const reverter = new Reverter();
@@ -15,6 +24,7 @@ describe("MasterContractsRegistry", async () => {
   let constantsRegistry: ConstantsRegistry;
   let masterAccess: MasterAccessManagement;
   let registry: MasterContractsRegistry;
+  let constantsRegistryProxy: TransparentUpgradeableProxy;
 
   const MasterContractsRegistryRole = "MCR";
   const MasterContractsRegistryCreate: IRBAC.ResourceWithPermissionsStruct = {
@@ -54,6 +64,11 @@ describe("MasterContractsRegistry", async () => {
 
     await registry.addProxyContract(await registry.CONSTANTS_REGISTRY_NAME(), constantsRegistry);
     await registry.addProxyContract(await registry.REVIEWABLE_REQUESTS_NAME(), reviewableRequests);
+
+    const TransparentUpgradeable = await ethers.getContractFactory("TransparentUpgradeableProxy");
+    constantsRegistryProxy = TransparentUpgradeable.attach(
+      await registry.getConstantsRegistry(),
+    ) as TransparentUpgradeableProxy;
 
     await reverter.snapshot();
   });
@@ -194,7 +209,7 @@ describe("MasterContractsRegistry", async () => {
         await masterAccess.addPermissionsToRole(MasterContractsRegistryRole, [MasterContractsRegistryCreate], true);
         await masterAccess.grantRoles(USER1, [MasterContractsRegistryRole]);
 
-        await registry.connect(USER1).justAddProxyContract("TEST", constantsRegistry);
+        await registry.connect(USER1).justAddProxyContract("TEST", constantsRegistryProxy);
       });
 
       it("should not be possible to call justAddProxyContract without Create permission", async () => {
@@ -209,12 +224,12 @@ describe("MasterContractsRegistry", async () => {
         await masterAccess.addPermissionsToRole(MasterContractsRegistryRole, [MasterContractsRegistryDelete], true);
         await masterAccess.grantRoles(USER1, [MasterContractsRegistryRole]);
 
-        await registry.justAddProxyContract("TEST", constantsRegistry);
+        await registry.justAddProxyContract("TEST", constantsRegistryProxy);
         await registry.connect(USER1).removeContract("TEST");
       });
 
       it("should not be possible to call removeContract without Delete permission", async () => {
-        await registry.justAddProxyContract("TEST", constantsRegistry);
+        await registry.justAddProxyContract("TEST", constantsRegistryProxy);
         await expect(registry.connect(USER1).removeContract("TEST")).to.be.rejectedWith(
           "MasterContractsRegistry: access denied",
         );

@@ -1,14 +1,17 @@
+import { expect } from "chai";
+import { ethers } from "hardhat";
+
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { Reverter } from "../helpers/reverter";
+
+import { Reverter } from "@/test/helpers/reverter";
+
 import {
   MasterAccessManagement,
   MasterContractsRegistry,
   MulticallExecutor,
   MulticallMock,
   MulticalleeMock,
-} from "@/generated-types";
-import { ethers } from "hardhat";
-import { expect } from "chai";
+} from "@ethers-v6";
 
 describe("Multicall", () => {
   const provider = ethers.provider;
@@ -138,13 +141,13 @@ describe("Multicall", () => {
 
   describe("#__Multicall_init", () => {
     it("should revert when reinitialized", async () => {
-      await expect(multicall.__Multicall_init(), "Initializable: contract is already initialized");
+      await expect(multicall.__Multicall_init()).to.be.rejectedWith("Initializable: contract is already initialized");
     });
   });
 
   describe("#setDependencies", () => {
     it("should not set dependencies from non dependant", async () => {
-      await expect(multicall.setDependencies(OWNER, "0x"), "Dependant: not an injector");
+      await expect(multicall.setDependencies(OWNER, "0x")).to.be.rejectedWith("Dependant: not an injector");
     });
   });
 

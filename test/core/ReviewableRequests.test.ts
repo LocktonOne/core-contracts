@@ -1,5 +1,10 @@
+import { expect } from "chai";
+import { ethers } from "hardhat";
+
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { Reverter } from "../helpers/reverter";
+
+import { Reverter } from "@/test/helpers/reverter";
+
 import {
   CREATE_PERMISSION,
   DELETE_PERMISSION,
@@ -7,16 +12,14 @@ import {
   REVIEWABLE_REQUESTS_RESOURCE,
   RequestStatus,
 } from "../utils/constants";
+
 import {
   IRBAC,
   MasterAccessManagement,
   MasterContractsRegistry,
   RequestExecutorMock,
   ReviewableRequests,
-} from "@/generated-types";
-import { ethers } from "hardhat";
-import { expect } from "chai";
-import { ZERO_ADDR } from "@/scripts/utils/constants";
+} from "@ethers-v6";
 
 describe("ReviewableRequests", () => {
   const reverter = new Reverter();
@@ -102,7 +105,7 @@ describe("ReviewableRequests", () => {
       await masterAccess.grantRoles(USER1, [ReviewableRequestsRole]);
 
       await expect(
-        reviewableRequests.connect(USER1).createRequest(ZERO_ADDR, "0x00", "0x11", "Misc", "Simple request"),
+        reviewableRequests.connect(USER1).createRequest(ethers.ZeroAddress, "0x00", "0x11", "Misc", "Simple request"),
       ).to.be.rejectedWith("ReviewableRequests: zero executor");
     });
 
@@ -255,7 +258,9 @@ describe("ReviewableRequests", () => {
       await reviewableRequests.connect(USER1).createRequest(OWNER, "0x00", "0x11", "Misc", "Simple request");
 
       await expect(
-        reviewableRequests.connect(USER2).updateRequest(0, ZERO_ADDR, "0x", "0x", "Misc2", "Left request untouched"),
+        reviewableRequests
+          .connect(USER2)
+          .updateRequest(0, ethers.ZeroAddress, "0x", "0x", "Misc2", "Left request untouched"),
       ).to.be.rejectedWith("ReviewableRequests: not a request creator");
     });
 

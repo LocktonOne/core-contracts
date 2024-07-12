@@ -6,7 +6,7 @@ import {
   Multicall__factory,
 } from "@/generated-types";
 
-module.exports = async (deployer: Deployer) => {
+export = async (deployer: Deployer) => {
   const registry = await deployer.deployed(MasterContractsRegistry__factory, "MasterContractsRegistry Proxy");
 
   const multicall = await deployer.deployed(Multicall__factory, await registry.getMulticall());

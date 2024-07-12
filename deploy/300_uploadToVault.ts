@@ -1,10 +1,12 @@
 import { Deployer } from "@solarity/hardhat-migrate";
 
-import { MasterContractsRegistry__factory } from "@/generated-types";
+import { ApiResponseError } from "node-vault";
 
 import { getConfigJson } from "./config/config-parser";
 
-module.exports = async (deployer: Deployer) => {
+import { MasterContractsRegistry__factory } from "@/generated-types";
+
+export = async (deployer: Deployer) => {
   if (process.env.VAULT_DISABLED && process.env.VAULT_DISABLED === "true") return;
   const vault = require("node-vault")({
     apiVersion: "v1",
@@ -29,12 +31,20 @@ module.exports = async (deployer: Deployer) => {
     projectName: projectName,
     addresses: {
       ConstantsRegistry: constantsRegistryAddress,
-      MasterContractsRegistry: registry.getAddress(),
+      MasterContractsRegistry: await registry.getAddress(),
       MasterAccessManagement: masterAccessAddress,
       ReviewableRequests: reviewableRequestsAddress,
       Multicall: multicallAddress,
     },
   };
 
-  await vault.write(process.env.VAULT_UPLOAD_CONFIG_PATH, { data: config });
+  try {
+    await vault.write(process.env.VAULT_UPLOAD_CONFIG_PATH, { data: config });
+  } catch (error) {
+    if ((error as ApiResponseError).response) {
+      console.log((error as ApiResponseError).response.body.errors);
+    } else {
+      console.log(error);
+    }
+  }
 };

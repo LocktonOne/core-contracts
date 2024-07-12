@@ -1,6 +1,6 @@
 {
   "name": "tokene",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "license": "MIT",
   "author": "Distributed Lab",
   "description": "The TokenE operating system on top of EVM by Distributed Lab",
@@ -24,26 +24,27 @@
     "private-network": "npx hardhat node",
     "private-network-fork": "npx hardhat node --fork https://mainnet.infura.io/v3/$(grep INFURA_KEY .env | cut -d '\"' -f2)",
     "deploy-dev": "npx hardhat migrate --network dev",
-    "deploy-goerli": "npx hardhat migrate --network goerli --verify --confirmations 4",
+    "deploy-sepolia": "npx hardhat migrate --network sepolia --verify",
     "deploy-chapel": "npx hardhat migrate --network chapel --verify --confirmations 1",
     "deploy-eth-mainnet": "npx hardhat migrate --network ethereum --verify --confirmations 4",
     "deploy-bsc-mainnet": "npx hardhat migrate --network bsc --verify --confirmations 2",
+    "docker-dev-vault": "docker run --name vault -p 8200:8200 vault:1.7.3",
     "generate-types": "TYPECHAIN_FORCE=true npx hardhat typechain",
     "generate-docs": "npx hardhat markup",
     "lint-fix": "npm run lint-sol-fix && npm run lint-ts-fix && npm run lint-json-fix",
     "lint-json-fix": "prettier --write \"./[a-zA-Z0-9.]+(?!-lock).json\"",
     "lint-ts-fix": "prettier --write \"./**/*.ts\"",
     "lint-sol-fix": "prettier --write \"contracts/**/*.sol\"",
-    "publish-to-npm": "npm run lint-fix && bash ./scripts/publish.sh",
+    "publish-to-npm": "npm run lint-fix && bash ./scripts/publish.sh --public",
     "prepare": "husky"
   },
   "dependencies": {
-    "@dlsl/dev-modules": "2.2.0",
-    "@openzeppelin/contracts": "4.8.0",
-    "@openzeppelin/contracts-upgradeable": "4.8.0"
+    "@solarity/solidity-lib": "2.7.10",
+    "@openzeppelin/contracts": "4.9.6",
+    "@openzeppelin/contracts-upgradeable": "4.9.6"
   },
   "devDependencies": {
-    "@dlsl/hardhat-markup": "^1.0.0-rc.14",
+    "@solarity/hardhat-markup": "1.0.8",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.6",
     "@nomicfoundation/hardhat-ethers": "^3.0.6",
     "@solarity/hardhat-migrate": "2.1.8",

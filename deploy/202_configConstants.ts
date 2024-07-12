@@ -4,7 +4,7 @@ import { ConstantsRegistry__factory, MasterContractsRegistry__factory } from "@/
 
 import { getConfigJson } from "./config/config-parser";
 
-module.exports = async (deployer: Deployer) => {
+export = async (deployer: Deployer) => {
   const registry = await deployer.deployed(MasterContractsRegistry__factory, "MasterContractsRegistry Proxy");
   const constantsRegistry = await deployer.deployed(ConstantsRegistry__factory, await registry.getConstantsRegistry());
 

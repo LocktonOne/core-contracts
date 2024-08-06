@@ -41,7 +41,6 @@ Build And Publish:
     - branches
   <<: *before_script_templ_gitlab
   script:
-    - cd core
     - docker build --pull -t "$IMAGE_NAME" -f docker/Dockerfile .
     - docker push "$IMAGE_NAME"
   except: [schedules]
@@ -55,7 +54,6 @@ Build And Publish Tag:
     - branches
   <<: *before_script_templ
   script:
-    - cd core
     - docker build --pull -t "$CONTAINER_RELEASE_IMAGE" -f docker/Dockerfile .
     - docker push "$CONTAINER_RELEASE_IMAGE"
   except: [schedules]

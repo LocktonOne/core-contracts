@@ -11,7 +11,12 @@ export = async (deployer: Deployer) => {
     "MasterAccessManagement Implementation",
   );
 
-  await registry.__MasterContractsRegistry_init(masterAccessImpl);
+  const tx = await registry.__MasterContractsRegistry_init(masterAccessImpl);
+  const receipt = await tx.wait();
+  if (!receipt) {
+    throw new Error("Transaction receipt is null");
+  }
+  process.env.START_MIGRATIONS_BLOCK = receipt.blockNumber.toString();
 
   const masterAccess = await deployer.deployed(
     MasterAccessManagement__factory,

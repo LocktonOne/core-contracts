@@ -27,6 +27,12 @@ export = async (deployer: Deployer) => {
     throw new Error("uploadToVault: projectName is undefined");
   }
 
+  const startBlock = process.env.START_MIGRATIONS_BLOCK;
+
+  if (startBlock == undefined) {
+    throw new Error("uploadToVault: startBlock is undefined");
+  }
+
   const config = {
     projectName: projectName,
     addresses: {
@@ -36,6 +42,7 @@ export = async (deployer: Deployer) => {
       ReviewableRequests: reviewableRequestsAddress,
       Multicall: multicallAddress,
     },
+    startBlock: startBlock,
   };
 
   try {

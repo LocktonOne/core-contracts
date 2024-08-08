@@ -42,7 +42,7 @@ export = async (deployer: Deployer) => {
       ReviewableRequests: reviewableRequestsAddress,
       Multicall: multicallAddress,
     },
-    startBlock: startBlock,
+    startBlock: parseInt(startBlock, 10),
   };
 
   try {
